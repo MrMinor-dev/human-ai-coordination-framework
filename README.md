@@ -1,4 +1,4 @@
-# Operational Reporting Framework
+# Human-AI Coordination Framework
 
 **Human-AI Coordination — Building Alignment With an Amnesic Partner**
 
@@ -14,7 +14,44 @@ The structured state document is the foundation. Five sections, each with a defi
 
 Async coordination runs through Slack. Instructions, task reroutes, and status checks without opening a full session. The agent classifies the message, parses the command, logs receipt, executes, and acknowledges. Neither side needs to be available at the same time.
 
+```typescript
+interface AsyncCommand {
+  id: string;
+  timestamp: ISO8601;
+  source: "slack" | "email";
+  sender: {
+    verified: boolean;     // Confirmed as Jordan
+    identifier: string;    // Slack ID or email
+  };
+  command: {
+    raw: string;           // Original message
+    type: CommandType;     // Parsed type
+    target?: string;       // What it applies to
+    parameters?: Record<string, any>;
+  };
+  processing: {
+    status: "received" | "queued" | "processing" | "completed" | "failed";
+    tier_required: 1 | 2 | 3;
+    requires_session: boolean;  // Some actions need full session
+  };
+}
+```
+
+Tier 1 actions queue for acknowledgment. Tier 2+ execute and report. Every command is logged regardless of outcome.
+
 The handoff contract is the coordination artifact that scales across tools. A schema all 8 production skills use when passing work between phases: what was done, which files changed, current state, errors encountered, what's next. Standardized so any skill can pick up where another left off without asking.
+
+```markdown
+## Handoff Contract
+- Action taken: [specific summary]
+- Files affected: [list with full paths]
+- Workflows invoked: [workflow IDs and outcomes]
+- State changes: [what changed]
+- Verification: [how outcome was confirmed]
+- Next trigger: [if chaining, what skill/action follows]
+```
+
+Facts only. No reasoning, no recommendations. The contract passes state, not interpretation. That constraint is what makes it safe to chain agents — neither side has to trust the other's judgment about what happened.
 
 **The reporting layer**
 
